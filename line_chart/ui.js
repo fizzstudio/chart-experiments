@@ -70,7 +70,7 @@ function list_keys (data, container) {
       series_legend.appendChild(series_checkbox);
       series_fieldset.appendChild(series_legend);
 
-      for (let s = 0, s_len = dataset[series].length; s_len > s; ++s) {
+      for (let s = 1, s_len = dataset[series].length; s_len > s; ++s) {
         let seg_id = `${series}-segment_${s}`;
         let index_checkbox = create_checkbox(`checkbox-${seg_id}`, seg_id, s);
         series_fieldset.appendChild(index_checkbox);
