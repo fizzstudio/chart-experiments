@@ -26,7 +26,6 @@
 
     fieldset {
       margin-top: 2rem;
-      width: 25%;
     }
 
       fieldset label {
@@ -37,6 +36,15 @@
       fieldset label input {
         margin-right: 0.5rem;
       }
+
+      fieldset.series_fieldset {
+        margin-top: 0;
+      }
+
+        fieldset.series_fieldset label {
+          display: inline-block;
+          margin-right: 0.75rem;
+        }
   </style>
   <link rel="stylesheet" href="line_chart.css">
 </head>
@@ -55,8 +63,7 @@
     </main>
   </div>
 
-  <script src="line_chart.js"></script>
-  <script src="ui.js"></script>
+  <script src="ui.js" type="module"></script>
 
 </body>
 </html>

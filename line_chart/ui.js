@@ -1,3 +1,5 @@
+import { LineChart } from "./line_chart_segmented.js";
+
 const dataset = {
   'label': ['nft0db9tau','40dbtlu77d','8fnfl9il3y','reg12v6vrm','fa0d98wo4u','bzildiwajl','y28q950bzg','geoo503s2l','zx99wiofpe','4biz733von','w2iokw0pu6','4uijq1qtiz','dttrqa4nmn','m3uso56ysh','6976a9xodo'],
   'f71s81dhj5': ['10','7','13','16','7','7','7','19','12','4','3','7','19','8','17'],
@@ -58,37 +60,46 @@ function list_keys (data, container) {
   fieldset.appendChild(legend);
 
   for (const series in dataset) {
-    if (`label` !== series) {
-      let checkbox = document.createElement(`input`);
-      checkbox.type = `checkbox`;
-      checkbox.name = series;
-      checkbox.value = series;
-      checkbox.id = `checkbox-${series}`;
+    if (`label` !== series) { 
+      let series_checkbox = create_checkbox(`checkbox-${series}`, series, series);
+      // fieldset.appendChild(checkbox);
 
-      let label = document.createElement(`label`)
-      label.htmlFor = `checkbox-${series}`;
-      label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(series));
+      let series_fieldset = document.createElement(`fieldset`);
+      series_fieldset.classList.add(`series_fieldset`);
+      let series_legend = document.createElement(`legend`);
+      series_legend.appendChild(series_checkbox);
+      series_fieldset.appendChild(series_legend);
 
-      fieldset.appendChild(label);
+      for (let s = 1, s_len = dataset[series].length; s_len > s; ++s) {
+        let seg_id = `${series}-segment_${s}`;
+        let index_checkbox = create_checkbox(`checkbox-${seg_id}`, seg_id, s);
+        series_fieldset.appendChild(index_checkbox);
+      }    
+      fieldset.appendChild(series_fieldset);
     }
   }
 
   container.appendChild(fieldset);
 
-  const hide_checkbox = document.createElement(`input`);
-  hide_checkbox.type = `checkbox`;
-  hide_checkbox.name = `hide_datalines`;
-  hide_checkbox.value = `hide_datalines`;
-  hide_checkbox.id = `checkbox-hide_datalines`;
+  const hide_checkbox = create_checkbox(`checkbox-hide_datalines`, `hide_datalines`, `hide unselected datalines`);
+  hide_checkbox.addEventListener(`click`, show_selected_datalines, true);
 
-  let hide_label = document.createElement(`label`)
-  hide_label.htmlFor = `checkbox-hide_datalines`;
-  hide_label.appendChild(hide_checkbox);
-  hide_label.appendChild(document.createTextNode(`hide unselected datalines`));
-  hide_label.addEventListener(`click`, show_selected_datalines, true);
+  container.appendChild(hide_checkbox);
+}
 
-  container.appendChild(hide_label);
+function create_checkbox (id, value, label_text) {
+  let checkbox = document.createElement(`input`);
+  checkbox.type = `checkbox`;
+  checkbox.name = label_text;
+  checkbox.value = value;
+  checkbox.id = id;
+
+  let label = document.createElement(`label`)
+  label.htmlFor = id;
+  label.appendChild(checkbox);
+  label.appendChild(document.createTextNode(label_text));
+
+  return label;
 }
 
 function show_selected_datalines (event) {
@@ -104,4 +115,6 @@ function show_selected_datalines (event) {
   const hide_checkbox = document.getElementById(`checkbox-hide_datalines`);
 
   chart.hilite_by_id(selected_ids, hide_checkbox.checked);
+
+  chart.hilite_segments_by_id(selected_ids);
 }
