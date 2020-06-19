@@ -1,4 +1,4 @@
-class LineChart {
+export class LineChart {
   constructor(data, container, width, height) {
     this.svgns = `http://www.w3.org/2000/svg`;
     this.data = data;
@@ -14,7 +14,7 @@ class LineChart {
     this.x_label_font_size = 15;
     this.margin = 15;
     this.ticklength = 10;
-    this.line_label_width = 80;
+    this.line_label_width = 90;
     this.axis_label_bbox = {
       x: this.ticklength + (this.font_size * 1.5),
       y: this.font_size
@@ -30,9 +30,10 @@ class LineChart {
   }
 
   init () {
-    this.find_min_max_values(this.data);
+    this.find_min_max_values();
     this.create_chart();
     this.create_axes();
+    this.create_markers();
 
     let idnum = 0;
     for (const series in this.data) {
@@ -49,18 +50,18 @@ class LineChart {
     // TODO: find longest string in labels, set line_label_width and x_label_font_size accordingly
     // const longest_string = this.record_labels.reduce((a, b) => { return a.length > b.length ? a : b; });
 
-    for (const series in dataset) {
+    for (const series in this.data) {
       if (`label` === series) {
-        this.record_labels = dataset[series];
+        this.record_labels = this.data[series];
         this.record_count = this.record_labels.length;
       } else {
-        let row = dataset[series];
+        let row = this.data[series];
         for (let record of row) {
           let val = parseFloat(record);
 
-          if (!this.max || !this.min) {
-            this.max = !this.max ? val : this.max;
-            this.min = !this.min ? val : this.min;
+          if (null === this.max || null === this.min) {
+            this.max = (!this.max && 0 !== this.max) ? val : this.max;
+            this.min = (!this.min && 0 !== this.min) ? val : this.min;
           }
 
           if (`` !== val && !isNaN(val)) {
@@ -161,6 +162,28 @@ class LineChart {
     this.root.appendChild(y_axis);
   }
 
+  create_markers() {
+    let defs = document.createElementNS(this.svgns, `defs`);
+
+    for (let m = 0; this.record_count > m; ++m) {
+      let marker = document.createElementNS(this.svgns, `marker`);
+      marker.id = `marker-dot-${m}`;
+      marker.setAttribute(`viewBox`, `-4 -4 8 8`);
+      marker.setAttribute(`markerUnits`, `strokeWidth`);
+      marker.setAttribute(`markerWidth`, `5`);
+      marker.setAttribute(`markerHeight`, `5`);
+      marker.setAttribute(`stroke`, `context-fill`);
+      marker.setAttribute(`fill`, `context-fill`);
+
+      let dot = document.createElementNS(this.svgns, `circle`);
+      dot.setAttribute(`r`, 3 );
+      marker.appendChild(dot);
+
+      defs.appendChild(marker);
+    }
+    this.root.appendChild(defs);
+  }
+
   create_dataline(series, label, series_id) {
     //  create dataline group
     let dataline_group = document.createElementNS(this.svgns, `g`);
@@ -171,28 +194,33 @@ class LineChart {
     const l_len = this.record_count;
     const x_tick_distance = this.single_precision(this.dataspace.width / (l_len - 1));
 
-    let dataline = document.createElementNS(this.svgns, `path`);
-    let moveto = true;
-    let d = ``;
-    let y_pos = 0;
+    let prev_x_pos = 0;
+    let prev_y_pos = 0;
     for (let l = 0; l_len > l; ++l) {
       let val = series[l];
-      if (`` === val || isNaN(val)) {
-        moveto = true;
-      } else {
-        y_pos = (this.dataspace.y + this.dataspace.height) - (this.single_precision(this.dataspace.height / (this.max / val)));
-        let command = moveto ? `M` : `L`;
-        d += `${command}${this.dataspace.x + (x_tick_distance * l)},${y_pos}`;
-        moveto = false;
-      }
 
+      if (`` !== val && !isNaN(val)) {
+        let dataline = document.createElementNS(this.svgns, `path`);
+        let x_pos = this.dataspace.x + (x_tick_distance * l);
+        let y_pos = (this.dataspace.y + this.dataspace.height) - (this.single_precision(this.dataspace.height / (this.max / val)));
+        if (0 !== l) {
+          let d = `M${prev_x_pos},${prev_y_pos} L${x_pos},${y_pos}`;
+          dataline.setAttribute(`d`, d);
+          // dataline.id = `series_${label}-segment_${l}`;
+          dataline.id = `${label}-segment_${l}`;
+          dataline_group.appendChild(dataline);
+          dataline.setAttribute(`marker-start`, `url(#marker-dot-${series_id})`);
+          dataline.setAttribute(`marker-end`, `url(#marker-dot-${series_id})`);
+        }
+
+        prev_x_pos = x_pos;
+        prev_y_pos = y_pos;
+      }
     }
-    dataline.setAttribute(`d`, d);
-    dataline_group.appendChild(dataline);
 
     let dataline_label = document.createElementNS(this.svgns, `text`);
-    dataline_label.setAttribute(`x`, (this.dataspace.x + this.dataspace.width) + 5 );
-    dataline_label.setAttribute(`y`, y_pos + (this.font_size * 0.3));
+    dataline_label.setAttribute(`x`, (this.dataspace.x + this.dataspace.width) + 10 );
+    dataline_label.setAttribute(`y`, prev_y_pos + (this.font_size * 0.3));
     dataline_label.textContent = label;
     dataline_group.appendChild(dataline_label);
 
@@ -214,8 +242,31 @@ class LineChart {
       }
 
       for (const id of id_arr) {
+        // console.log(id);
         const dataline = document.getElementById(id);
-        dataline.classList.remove(`hide`, `lowlite`);
+        if (dataline) {
+          dataline.classList.remove(`hide`, `lowlite`);
+        }
+      }
+    }
+  }
+
+  hilite_segments_by_id( id_arr ) {
+    const segments = document.querySelectorAll(`path[id*=-segment_]`);
+    if (!id_arr || !id_arr.length) {
+      for (const segment of segments) {
+        segment.classList.remove(`segment_hilite`);
+      }
+    } else {
+      for (const segment of segments) {
+        segment.classList.remove(`segment_hilite`);
+      }
+
+      for (const id of id_arr) {
+        const segment = document.getElementById(id);
+        if (segment){
+          segment.classList.add(`segment_hilite`);
+        }
       }
     }
   }
