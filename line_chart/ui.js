@@ -1,6 +1,5 @@
 import { LineChart } from "./line_chart_segmented.js";
 
-
 const dataset = {
   'label': ['nft0db9tau','40dbtlu77d','8fnfl9il3y','reg12v6vrm','fa0d98wo4u','bzildiwajl','y28q950bzg','geoo503s2l','zx99wiofpe','4biz733von','w2iokw0pu6','4uijq1qtiz','dttrqa4nmn','m3uso56ysh','6976a9xodo'],
   'f71s81dhj5': ['10','7','13','16','7','7','7','19','12','4','3','7','19','8','17'],
